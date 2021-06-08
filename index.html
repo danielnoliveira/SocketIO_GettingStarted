@@ -1,0 +1,271 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+  <title>Socket.IO chat</title>
+  <style>
+    body {
+      margin: 0;
+      padding-bottom: 3rem;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    }
+
+    #form {
+      background: rgba(0, 0, 0, 0.15);
+      padding: 0.25rem;
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      display: flex;
+      height: 3rem;
+      box-sizing: border-box;
+      backdrop-filter: blur(10px);
+    }
+
+    #input {
+      border: none;
+      padding: 0 1rem;
+      flex-grow: 1;
+      border-radius: 2rem;
+      margin: 0.25rem;
+    }
+
+    #input:focus {
+      outline: none;
+    }
+
+    #form>button {
+      background: #333;
+      border: none;
+      padding: 0 1rem;
+      margin: 0.25rem;
+      border-radius: 3px;
+      outline: none;
+      color: #fff;
+    }
+    ul {
+      display: inline-block;
+      list-style-type: none;
+      margin: 0;
+      padding: 0;
+    }
+    #usersconnected {
+      width: 27.5%;
+      float: right;
+      border-left: 1px solid black;
+      height: calc(100vh - 3rem);
+      padding: 10px;
+    }
+    #usersconnected> li {
+      border-bottom: 1px solid gray;
+      padding:10px 0;
+    }
+    #usersconnected > li > span {
+      margin-right: 5px;
+    }
+    #messages {
+      float: left;
+      width: 69.5%;
+    }
+
+    #messages>li {
+      padding: 0.5rem 1rem;
+    }
+
+    #messages>li:nth-child(odd) {
+      background: #efefef;
+    }
+    #modalNickname {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+      width: 100%;
+      overflow: hidden;
+      z-index: 99999;
+      position: absolute;
+      background-color: white;
+    }
+    #model_form {
+      border-radius: 10px;
+      height: 400px;
+      width: 800px;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      flex-direction: column;
+    }
+    #model_form > * {
+      margin: 20px 0;
+    }
+    #labelnick {
+      font-size: 30px;
+      font-weight: bold;
+      letter-spacing: 1px;
+    }
+    #inputnick {
+      border: none;
+      border-bottom: 1px solid black;
+      font-size: 28px;
+      outline: none;
+      background-color: transparent;
+    }
+    #buttonEnter {
+      width: 300px;
+      height: 40px;
+      line-height: 35px;
+      font-size: 30px;
+      border-radius: 50px;
+      border: 2px solid black;
+      background-color: white;
+      filter: brightness(80%);
+    }
+    #buttonEnter:hover {
+      filter: brightness(120%);
+      cursor: pointer;
+    }
+    .greenball {
+      display: inline-block;
+      height: 10px;
+      border: 1px solid black;
+      width: 10px;
+      background-color: rgba(0, 205, 0, 1);
+      border-radius: 100%;
+    }
+    #typingMark {
+      display: none;
+      position: absolute;
+      background-color: #a1a1a1;
+      border-top-left-radius: 20px;
+      border-top-right-radius: 20px;
+      text-align: center;
+      padding: 5px 0 5px 10px;
+      font-weight: bold;
+      bottom: 3rem;
+      z-index: 5;
+      clear: both;
+      left: 12px;
+    }
+    #typingMark> span:not(#usernick) {
+      font-size: 20px;
+      animation: load 1s linear infinite;
+    }
+    #typingMark>span:nth-child(2){
+      animation-delay: 0.1s;
+    }
+    #typingMark>span:nth-child(3){
+      animation-delay: 0.2s;
+    }
+    #typingMark>span:nth-child(4){
+      animation-delay: 0.3s;
+    }
+    @keyframes load {
+      0%,100% {
+        opacity: 0.1;
+      }
+      50% {
+        opacity: 1;
+      }
+    }
+  </style>
+</head>
+
+<body>
+  <div id="modalNickname">
+    <form action="" id="model_form">
+      <label for="inputnick" id="labelnick">
+        Apelido:
+        <input type="text" name="nickname" placeholder="Seu apelido..." id="inputnick"/>
+      </label>
+      <button id="buttonEnter" type="submit">Entrar na sala</button>
+    </form>
+  </div>
+  <ul id="messages"></ul>
+  <ul id="usersconnected"></ul>
+  <div id="typingMark">
+    <span id="usernick">user is typing</span>
+    <span>.</span>
+    <span>.</span>
+    <span>.</span>
+  </div>
+  <form id="form" action="">
+    <input id="input" autocomplete="off" /><button>Send</button>
+  </form>
+  <script src="/socket.io/socket.io.js"></script>
+  <script>
+    var socket = io();
+
+    var usersc = document.getElementById('usersconnected');
+    var messages = document.getElementById('messages');
+    var form = document.getElementById('form');
+    var input = document.getElementById('input');
+
+    var modalDiv = document.getElementById('modalNickname');
+    var formModel = document.getElementById('model_form');
+    var nickname = document.getElementById('inputnick');
+
+    var typingMark = document.getElementById('typingMark');
+    var usernick = document.getElementById('usernick');
+
+    const addMsgToList = (user,msg,flag) => {
+      var item = document.createElement('li');
+      item.textContent = `${user}: ${msg}`;
+      if(user === 'system'){
+        item.style.color = flag === 'c'?'green':'red';
+      }
+      messages.appendChild(item);
+      window.scrollTo(0, document.body.scrollHeight);
+    }
+    formModel.addEventListener('submit', e => {
+      e.preventDefault();
+      sessionStorage.setItem('nickname',nickname.value);
+      socket.emit('my nickname',nickname.value);
+      modalDiv.style.display = 'none';
+    });
+
+    input.addEventListener('keypress',()=>{
+      socket.emit('user is typing',sessionStorage.getItem('nickname'));
+    });
+
+
+    form.addEventListener('submit', function (e) {
+      e.preventDefault();
+      if (input.value) {
+        addMsgToList(sessionStorage.getItem('nickname'), input.value,'');
+        socket.emit('chat message', input.value);
+        input.value = '';
+      }
+    });
+
+    socket.on('chat message', addMsgToList);
+    
+    var timeoutID = null;
+    
+    socket.on('someone is typing',user => {
+      usernick.textContent = usernick.textContent.replace('user',user);
+      typingMark.style.display = 'initial';
+      if(timeoutID){
+        clearTimeout(timeoutID);
+      }
+      timeoutID = setTimeout(()=>{
+        typingMark.style.display = 'none';
+      },800);
+    });
+    socket.on('users connected',users => {
+      usersc.textContent = '';
+      for(var u of users){
+        var li = document.createElement('li');
+        var greenBall = document.createElement('span');
+        greenBall.classList.add('greenball');
+        li.appendChild(greenBall);
+        var span = document.createElement('span');
+        span.textContent = u;
+        li.appendChild(span);
+        usersc.appendChild(li);
+      }
+    });
+  </script>
+</body>
+
+</html>
