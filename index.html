@@ -196,6 +196,8 @@
   <script>
     var socket = io();
 
+    var regex = /^@(\w+) (.+)/g;
+
     var usersc = document.getElementById('usersconnected');
     var messages = document.getElementById('messages');
     var form = document.getElementById('form');
@@ -254,13 +256,14 @@
     });
     socket.on('users connected',users => {
       usersc.textContent = '';
-      for(var u of users){
+      for(var id in users){
         var li = document.createElement('li');
+        li.dataset.socketId = id;
         var greenBall = document.createElement('span');
         greenBall.classList.add('greenball');
         li.appendChild(greenBall);
         var span = document.createElement('span');
-        span.textContent = u;
+        span.textContent = users[id];
         li.appendChild(span);
         usersc.appendChild(li);
       }

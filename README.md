@@ -1,5 +1,11 @@
 # Socket IO Getting Starting
 
+
+## Demonstração
+
+![App](https://media.giphy.com/media/xglEEjKOlbbHBc0asF/giphy.gif)
+
+
 ## Homework
 Here are some ideas to improve the application:
 
@@ -9,4 +15,3 @@ Here are some ideas to improve the application:
 * Add “{user} is typing” functionality.:heavy_check_mark:
 * Show who’s online. :heavy_check_mark:
 * Add private messaging.
-* Share your improvements!# SocketIO_GettingStarted

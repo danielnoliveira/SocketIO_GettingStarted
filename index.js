@@ -16,11 +16,11 @@ io.on('connect',socket => {
   socket.on('disconnect',()=>{
     socket.broadcast.emit('chat message','system',`${users[socket.id]} disconnected from chat`,'d');
     delete users[socket.id];
-    io.emit('users connected',Object.values(users));
+    io.emit('users connected',users);
   });
   socket.on('my nickname',nickname => {
     users[socket.id] = nickname;
-    io.emit('users connected',Object.values(users));
+    io.emit('users connected',users);
     socket.broadcast.emit('chat message','system',`${users[socket.id]} connected to chat`,'c');
   });
   socket.on('user is typing',user => {
